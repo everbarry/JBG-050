@@ -1,0 +1,23 @@
+
+initializing model using cuda, random seed: 69
+training...:   0%|                     | 0/50 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/main.py", line 60, in <module>
+    main(initEnv())
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/main.py", line 56, in main
+    results = train_sw(settings, dataloader, optimizer, model, criterion)
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/train_test.py", line 61, in train_sw
+    H = model(x_sequence, edge_index_sequence)
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/models.py", line 122, in forward
+    h_t = F.relu(self.gat2(h_t, edge_index_t))
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch_geometric/nn/conv/gat_conv.py", line 213, in forward
+    x_src = x_dst = self.lin_src(x).view(-1, H, C)
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch_geometric/nn/dense/linear.py", line 132, in forward
+    return F.linear(x, self.weight, self.bias)
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (13692x500 and 50x10)

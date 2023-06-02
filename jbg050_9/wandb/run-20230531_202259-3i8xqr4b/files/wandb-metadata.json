@@ -1,0 +1,99 @@
+{
+    "os": "Linux-6.3.4-arch1-1-x86_64-with-glibc2.37",
+    "python": "3.10.11",
+    "heartbeatAt": "2023-05-31T18:22:59.930090",
+    "startedAt": "2023-05-31T18:22:59.429304",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/main.py",
+    "codePath": "main.py",
+    "host": "Arch",
+    "username": "barry",
+    "executable": "/home/barry/anaconda3/envs/dc22/bin/python3",
+    "cpu_count": 6,
+    "cpu_count_logical": 12,
+    "cpu_freq": {
+        "current": 3500.04875,
+        "min": 800.0,
+        "max": 5000.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3499.887,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3500.008,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3499.997,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3499.883,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3500.067,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3499.998,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3499.94,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3499.982,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3500.003,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3500.629,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3499.996,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 3499.999,
+            "min": 800.0,
+            "max": 5000.0
+        }
+    ],
+    "disk": {
+        "total": 465.8809127807617,
+        "used": 440.0972671508789
+    },
+    "gpu": "NVIDIA GeForce GTX 1660 Ti",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce GTX 1660 Ti",
+            "memory_total": 6442450944
+        }
+    ],
+    "memory": {
+        "total": 15.408485412597656
+    }
+}

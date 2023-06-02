@@ -1,0 +1,99 @@
+
+initializing model using cuda, random seed: 69
+
+training...:   2%|▎            | 1/50 [00:30<25:12, 30.86s/it]
+--------------------
+Epoch : 0
+Loss (MSE) = 0.8954
+
+
+training...:   6%|▊            | 3/50 [01:48<28:49, 36.81s/it]
+--------------------
+Epoch : 2
+Loss (MSE) = 0.7710
+
+
+training...:  10%|█▎           | 5/50 [03:05<28:26, 37.91s/it]
+--------------------
+Epoch : 4
+Loss (MSE) = 0.7532
+
+training...:  12%|█▌           | 6/50 [03:45<28:21, 38.68s/it]
+--------------------
+Epoch : 6
+Loss (MSE) = 0.7451
+
+
+
+training...:  18%|██▎          | 9/50 [06:03<29:51, 43.71s/it]
+--------------------
+Epoch : 8
+Loss (MSE) = 0.7396
+
+training...:  20%|██▍         | 10/50 [06:50<29:54, 44.87s/it]
+--------------------
+Epoch : 10
+Loss (MSE) = 0.7354
+
+
+
+training...:  26%|███         | 13/50 [09:30<31:12, 50.60s/it]
+--------------------
+Epoch : 12
+Loss (MSE) = 0.7320
+
+
+training...:  30%|███▌        | 15/50 [11:18<30:43, 52.66s/it]
+--------------------
+Epoch : 14
+Loss (MSE) = 0.7291
+
+training...:  32%|███▊        | 16/50 [12:17<30:50, 54.42s/it]
+--------------------
+Epoch : 16
+Loss (MSE) = 0.7267
+
+
+
+training...:  38%|████▌       | 19/50 [15:02<28:14, 54.67s/it]
+--------------------
+Epoch : 18
+Loss (MSE) = 0.7246
+
+
+training...:  42%|█████       | 21/50 [17:03<27:56, 57.83s/it]
+--------------------
+Epoch : 20
+Loss (MSE) = 0.7227
+
+
+training...:  46%|█████▌      | 23/50 [19:00<26:07, 58.05s/it]
+--------------------
+Epoch : 22
+Loss (MSE) = 0.7211
+
+training...:  48%|█████▊      | 24/50 [19:58<25:12, 58.18s/it]
+--------------------
+Epoch : 24
+Loss (MSE) = 0.7196
+
+
+training...:  52%|██████▏     | 26/50 [22:18<20:35, 51.49s/it]
+Traceback (most recent call last):
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/main.py", line 60, in <module>
+    main(initEnv())
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/main.py", line 56, in main
+    results = train_sw(settings, dataloader, optimizer, model, criterion)
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/train_test.py", line 61, in train_sw
+    H = model(x_sequence, edge_index_sequence)
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/models.py", line 122, in forward
+    h_t = F.relu(self.gat2(h_t, edge_index_t))
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch_geometric/nn/conv/gat_conv.py", line 237, in forward
+    edge_index, edge_attr = remove_self_loops(
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch_geometric/utils/loop.py", line 80, in remove_self_loops
+    if layout is not None:
+KeyboardInterrupt

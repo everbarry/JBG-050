@@ -1,0 +1,15 @@
+
+initializing model using cuda, rs: 69
+training...:   0%|                               | 0/30 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/main.py", line 59, in <module>
+    main(initEnv())
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/main.py", line 55, in main
+    results = train(settings, dataloader, optimizer, model, criterion)
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/train_test.py", line 19, in train
+    H = model(x, edge_index)
+  File "/home/barry/anaconda3/envs/dc22/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/barry/Desktop/uni/dc2/JBG050-9/jbg050_9/models.py", line 92, in forward
+    x_t = x_sequence[:, t, :]
+IndexError: too many indices for tensor of dimension 2
