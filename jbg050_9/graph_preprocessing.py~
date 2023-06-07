@@ -1,0 +1,166 @@
+import numpy as np
+from scipy.sparse import csr_matrix
+from torch_geometric.utils import from_scipy_sparse_matrix
+import torch
+import pandas as pd
+import json
+from torch_geometric.data import InMemoryDataset, Data
+from sklearn.preprocessing import RobustScaler, MinMaxScaler, StandardScaler
+from sklearn.metrics.pairwise import euclidean_distances
+
+
+
+def distance_to_weight(W, sigma2=0.1, epsilon=0.5):
+    """"
+    Given distances between all nodes, convert into a weight matrix
+    :param W distances
+    :param sigma2 User configurable parameter to adjust sparsity of matrix
+    :param epsilon User configurable parameter to adjust sparsity of matrix
+    """
+    n = W.shape[0]
+    W = W / 10000.
+    W2, W_mask = W * W, np.ones([n, n]) - np.identity(n)
+    W = np.exp(-W2 / sigma2) * (np.exp(-W2 / sigma2) >= epsilon) * W_mask
+    return W
+
+
+
+def loadData(path='../data/df_crimes_LSOA_code.csv', save_description=False, only_burglary=True):
+    """
+    Loads data preprocessed as LSOA, month multinidexed df
+    :param save_description print&save df.describe to file
+    """
+    df = pd.read_csv(path)
+    df.set_index(['LSOA code', 'Month'], inplace=True)
+    df.sort_index(inplace=True)
+    df.sort_values(by=['LSOA code', 'Month'], inplace=True)
+    df.drop(columns=['Unnamed: 0'], inplace=True)
+    if only_burglary:
+        df = df[['Burglary']]
+        print(df.info())
+    if save_description:
+        df.describe().to_string(buf='output.txt')
+    return df
+
+
+def normalizeData(df, scaler_name, save_description=False, log=False):
+    """
+    Returns per column normalized df
+    :param save_description print&save df.describe to file
+    :param df output of loadData
+    :param scaler options: robust, minmax, standard
+    :param log: column Burglary = log(Burglary)
+    """
+    scaler = None
+    if scaler_name == 'minmax':
+        scaler = MinMaxScaler()
+    elif scaler_name == 'robust':
+        scaler = RobustScaler()
+    elif scaler_name == 'standard':
+        scaler = StandardScaler()
+    else:
+        assert f'Invalid scaler {scaler_name}, not in [robust, minmax, standard]'
+    normalized_df = df.copy()  # Create a copy of the original DataFrame
+    for column in df.columns:
+        if column == 'Burglary' and log:
+            normalized_cf[column] = np.log(df[column])
+        normalized_df[column] = scaler.fit_transform(df[[column]])
+    if save_description:
+        normalized_df.describe().to_string(buf='output_norm.txt')
+    return normalized_df
+
+
+def fillData(df):
+    """
+    Returns df without missing LSOA-month indexes, filling them up with zeros
+    :param df, normalized df
+    """
+    # Get unique 'LSOA code' and 'Month' from original DataFrame
+    unique_LSOA_codes = df.index.get_level_values('LSOA code').unique()
+    unique_Months = df.index.get_level_values('Month').unique()
+    # Ensure 'LSOA code' and 'Month' are of the same data type in new MultiIndex and original DataFrame's index
+    new_index = pd.MultiIndex.from_product([unique_LSOA_codes.astype(df.index.get_level_values('LSOA code').dtype),
+                                            unique_Months.astype(df.index.get_level_values('Month').dtype)],
+                                           names=['LSOA code', 'Month'])
+    # Reindex DataFrame with new index and fill missing values with zeros
+    df = df.reindex(new_index, fill_value=0)
+    return df
+
+
+def printInfo(df):
+    """
+    Prints and returns information about the final processed dataframe
+    :param df, filled df
+    """
+    num_nodes = df.index.get_level_values('LSOA code').nunique()
+    num_months = df.index.get_level_values('Month').nunique()
+    num_features = df.shape[1]
+    num_filled_rows = (df != 0).any(axis=1).sum()
+    print(f"Number of unique LSOA codes: {num_nodes}")
+    print(f"Number of unique Months: {num_months}")
+    print(f"Number of features: {num_features}")
+    print("Are there missing values? ", df.isnull().values.sum().sum())
+    print(f'Number of filled-in rows: {num_filled_rows}')
+    print(f'Total number of rows: {len(df)}')
+    print(f'{round(num_filled_rows/len(df),4)} % of the data filled in with 0s')
+    return num_nodes, num_months, num_features
+
+
+def processCentroids(df_crimes, path='../data/LSOA_centroids.csv'):
+    """
+    From raw data of LSOA centroids to np weight matrix
+    :param path, path of the LSOA centroids dataframe
+    :param df_crimes, filled df
+    """
+    df_centroids = pd.read_csv(path)
+    df_centroids = df_centroids[df_centroids['LSOA11CD'].isin(df_crimes.index.get_level_values('LSOA code'))]
+    df_coordinates = df_centroids[['x', 'y']]
+    dist_matrix = euclidean_distances(df_coordinates, df_coordinates)
+    df_dist = pd.DataFrame(dist_matrix, index=df_centroids['LSOA11CD'], columns=df_centroids['LSOA11CD'])
+    index_to_lsoa = {i: lsoa for i, lsoa in enumerate(df_dist.index)}
+    lsoa_to_index = {lsoa: i for i, lsoa in enumerate(df_dist.index)}
+    mappings = {'index_to_lsoa': index_to_lsoa, 'lsoa_to_index': lsoa_to_index}
+    with open('../data/mappings.json', 'w') as f:
+        json.dump(mappings, f)
+    weight_matrix = distance_to_weight(df_dist.values, sigma2=0.1, epsilon=0.5)
+    return weight_matrix
+
+
+def toTensor(df, weight_matrix, num_nodes, num_months, num_features):
+    """
+    creates, and stores raw graph pytorch-geometric Data obj
+    :param df, filled crimes df
+    :param weight_matrix, output of processCentroids
+    """
+    # Convert DataFrame to tensor
+    df_tensor = torch.tensor(df.values, dtype=torch.float)
+    # Reshape tensor to have dimensions [num_nodes, num_features, num_months]
+    df_tensor = df_tensor.view(num_nodes, num_months, num_features)
+    # Extract 'Burglary' time-series as the target attribute
+    target = df_tensor[:, :, df.columns.get_loc('Burglary')]
+
+    # Convert the weight matrix to a sparse matrix
+    sparse_weight_matrix = csr_matrix(weight_matrix)
+    # Convert the sparse matrix to an edge index and edge weight
+    edge_index, edge_weight = from_scipy_sparse_matrix(sparse_weight_matrix)
+    # Create Data object
+    data = Data(x=df_tensor, edge_index=edge_index, edge_attr=edge_weight, y=target)
+    print('saving data to file...')
+    torch.save(data, '../data/raw/graph_data.pt')
+    print(data)
+
+
+def main(path='../data/df_crimes_LSOA_code.csv'):
+    """
+    main that preprocesses the data as graph data
+    """
+    df = loadData(path)
+    df = normalizeData(df, scaler_name='standard', save_description=True)
+    df = fillData(df)
+    n_nodes, n_months, n_features = printInfo(df)
+    weight_matrix = processCentroids(df)
+    toTensor(df, weight_matrix, n_nodes, n_months, n_features)
+
+
+if __name__ == '__main__':
+    main()

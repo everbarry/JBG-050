@@ -51,14 +51,14 @@ def train_sw(settings, dataloader, optimizer, model, loss_fn)-> Dict:
         for data in dataloader:
             # Extract the data
             x_sequence = data.x.to(settings['device'])
-            edge_index_sequence = [edge_index.to(settings['device']) for edge_index in data.edge_index]
             y = data.y.to(settings['device'])
 
             # Zero the gradients
             optimizer.zero_grad()
+            print(x_sequence.shape, data.edge_index.shape)
 
             # Forward pass
-            H = model(x_sequence, edge_index_sequence)
+            H = model(x_sequence, data.edge_index.to(settings['device']))
 
             # Compute the loss
             loss = loss_fn(H, y)

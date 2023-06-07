@@ -1,0 +1,102 @@
+import numpy as np
+import torch
+import torch.nn as nn
+from tqdm import tqdm
+from torch.optim import Adam
+from torch_geometric.loader import DataLoader
+from torch_geometric.nn import GATConv
+from sklearn.metrics import r2_score
+from torch.utils.data import Dataset
+
+
+class TimeSeriesNodeDataset(Dataset):
+    def __init__(self, data, sequence_length=5):
+        super(TimeSeriesNodeDataset, self).__init__()
+        self.data = data
+        self.sequence_length = sequence_length
+
+    def __len__(self):
+        # We subtract the sequence length because for each sequence of "sequence_length",
+        # we use it to predict the next step, so we will have fewer total examples by "sequence_length"
+        return self.data.shape[1] - self.sequence_length
+
+    def __getitem__(self, index):
+        # We use "index:index+sequence_length" to get the inputs
+        # and then "index+sequence_length" to get the corresponding target
+        x = self.data[:, index:index+self.sequence_length]
+        y = self.data[:, index+self.sequence_length]
+        return x, y
+
+
+
+
+data = torch.load('../data/raw/graph_data.pt')
+device = 'cuda'
+edge_index = data.edge_index.to(device)
+data = data.y.to(device)
+print(f'data starting shape: {data.shape}')
+
+split_index = int(data.shape[1] * 0.8)
+
+# Create training and test datasets
+train_data = data[:, :split_index]
+test_data = data[:, split_index:-5] # We also need to consider the sequence_length for the test data
+
+train_dataset = TimeSeriesNodeDataset(train_data, sequence_length=12)
+test_dataset = TimeSeriesNodeDataset(test_data, sequence_length=12)
+
+# Create DataLoaders. Since we want all nodes at once, we set batch_size to the number of nodes.
+# Since the data is already on the desired device (CPU or GPU), we set pin_memory to False.
+train_loader = DataLoader(train_dataset, batch_size=1, pin_memory=False)
+test_loader = DataLoader(test_dataset, batch_size=1, pin_memory=False)
+
+
+class ShittyModel(nn.Module):
+    def __init__(self, n_nodes, n_heads):
+        super(ShittyModel, self).__init__()
+        self.cn1 = nn.Conv1d(in_channels=n_nodes, out_channels=n_nodes*2, kernel_size=2, stride=4, groups=n_nodes)
+        self.relu = nn.ReLU()
+        self.cn2 = nn.Conv1d(in_channels=n_nodes*2, out_channels=n_nodes*4, kernel_size=2, stride=4, groups=n_nodes*2)
+        self.gat1 = GATConv(in_channels=4, out_channels=16, heads=n_heads)
+        self.gat2 = GATConv(in_channels=16*n_heads, out_channels=1, heads=n_heads)
+        self.tanh = nn.Tanh()
+        self.dropout = nn.Dropout(p=0.2)
+        self.dense = nn.Linear(in_features=n_nodes, out_features=n_nodes)
+
+    def forward(self, x, edge_index):
+        h = self.cn1(x)
+        h = self.relu(h)
+        h = self.cn2(h)
+        h = self.relu(h)
+        h = h.reshape(13692, -1)
+        h = self.gat1(h, edge_index)
+        h = self.gat2(h, edge_index)
+        h = self.tanh(h)
+        h = self.dropout(h)
+        h = self.dense(h.view(-1))
+
+        return h
+
+
+model = ShittyModel(n_nodes=13692, n_heads=1)
+model.to(device)
+
+optimizer = Adam(model.parameters(), lr=0.01, weight_decay=0.001, amsgrad=True)
+criterion = nn.MSELoss()
+
+
+losses, r2_scores = [], []
+for epoch in tqdm(range(20), desc='Training...'):
+    epoch_losses, epoch_r2_scores = [], []
+    for x, y in tqdm(train_loader, desc=f'batch {epoch}'):
+        x, y = x.squeeze(0).to(device), y.squeeze(0).to(device)
+        optimizer.zero_grad()
+        H = model(x, edge_index)
+        loss = criterion(H, y)
+        epoch_losses.append(loss.item())
+        epoch_r2_scores.append(r2_score(y.cpu().numpy(), H.detach().cpu().numpy()))
+        loss.backward()
+        optimizer.step()
+    losses.append(np.mean(epoch_losses))
+    r2_scores.append(np.mean(epoch_r2_scores))
+    tqdm.write(f"{'-'*20}\nEpoch : {epoch}\nLoss (MSE) = {losses[-1]:.4f}\nR2 Score = {max(r2_scores):.4f}")

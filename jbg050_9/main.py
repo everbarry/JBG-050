@@ -8,7 +8,7 @@ from torchsummary import summary
 import wandb
 # modules
 from models import *
-from dataset import CrimeDataset, CrimeDatasetSW
+from dataset import CrimeDatasetSW,TemporalGraphDataset
 from parser import parser
 from train_test import train, train_sw
 
@@ -36,11 +36,16 @@ def main(settings: Dict):
     """
     main that runs train / eval based on given settings
     """
-    dataset  = CrimeDatasetSW(root='../data', sequence_length=settings['sliding_window'])
+    #dataset  = CrimeDatasetSW(root='../data', sequence_length=settings['sliding_window'])
+    dataset = TemporalGraphDataset(root='../data', sequence_length=settings['sliding_window'])
+
     dataloader = DataLoader(dataset, batch_size=1)
 
-    model = DeeperAttentionGCNSW(node_features=16, filters1=16, filters2=32, heads1=10, heads2=10)
+    #model = DeeperAttentionGCNSW(node_features=16, filters1=16, filters2=32, heads1=10, heads2=10)
+    #model = AttentionGCNSW(node_features=16, filters=16,heads=5)
+    #model = AttentionGCNl(node_features=32, filters=16,heads=5)
     #model = AttentionGCNSW(node_features=16, filters=1, heads=10)
+    model = TemporalGAT(node_features=16, filters=16, heads=5, sequence_length=settings['sliding_window'])
     model.to(settings['device'])
 
     criterion = nn.MSELoss()
